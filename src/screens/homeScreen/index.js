@@ -26,7 +26,6 @@ const HomeScreen = (props) => {
         <Button
           size="lg"
           variant="solid"
-          rounded
           onPress={() => {
             props.navigation.navigate('Instruction')
           }}

@@ -47,7 +47,12 @@ const GameScreen = () => {
 
   //on input change
   function onInput(text) {
-    setInput(text)
+    //taking only alphabets
+    let regx = /^[a-zA-Z]*$/
+    if (regx.test(text)) {
+      setInput(text)
+    }
+    return
   }
 
   //for resetting states
@@ -133,18 +138,19 @@ const GameScreen = () => {
           size="lg"
           disabled={!input.length ? true : false}
           onPress={onSubmit}
+          backgroundColor={!input.length ? 'grey' : 'rgb(26,146,177)'}
         >
           Submit
         </Button>
       </Box>
       <Text fontSize="md" marginBottom={10} bold>
-        Score:{score}
+        Score: {score}
       </Text>
       <Text fontSize="md" marginBottom={10} bold>
-        Live:{lives}
+        Live: {lives}
       </Text>
       <Text fontSize="md" marginBottom={10} bold>
-        High score:{highScore}
+        High score: {highScore}
       </Text>
     </ScrollView>
   )
