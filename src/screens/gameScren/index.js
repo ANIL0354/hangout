@@ -1,49 +1,36 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { ScrollView } from 'react-native'
 import { Button, Box, HStack, Input, useToast, Text } from 'native-base'
 import { getRandom } from '../../helper/randomPick'
 import styles from '../../commonStyle'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import GetHighScore from '../../helper/getHighScore'
+import { checkIfAnyMatched, checkIfAllMatched } from '../../helper/utilities'
 
 const GameScreen = () => {
   const toast = useToast()
 
   const [input, setInput] = useState('')
-  const [allMatchedText, setAllMatchedText] = useState('')
   const [score, setScore] = useState(0)
   const [lives, setLives] = useState(7)
-  const [letter, setLetter] = useState(getRandom())
-  const [highScore, setHighScore] = useState('')
+  const [letter, setLetter] = useState(getRandom()) //[{value:'c',match:false},{value:"a",match:false}]
+  const [highScored, storeData] = GetHighScore()
 
   useEffect(() => {
-    getData()
-  }, [])
-
-  //to get stored high score
-  async function getData() {
-    try {
-      const value = await AsyncStorage.getItem('@hight_score')
-      if (value !== null) {
-        setHighScore(parseInt(value))
-        // value previously stored
-      } else {
-        setHighScore(0)
-      }
-    } catch (e) {
-      console.log('error getData', e)
-      // error reading value
+    if (lives == 0) {
+      setScore(0)
+      reInitialize()
     }
-  }
+  }, [lives])
 
-  //for storing high score
-  async function storeData(value) {
-    try {
-      await AsyncStorage.setItem('@hight_score', value.toString())
-    } catch (e) {
-      console.log('error storeData', e)
-      // saving error
+  useEffect(() => {
+    if (highScored < score) {
+      storeData(score)
+      reInitialize()
+    } else {
+      reInitialize()
+      setLives(7)
     }
-  }
+  }, [score])
 
   //on input change
   function onInput(text) {
@@ -57,43 +44,25 @@ const GameScreen = () => {
 
   //for resetting states
   function reInitialize() {
-    setAllMatchedText('')
     let random = getRandom()
     setLetter(random)
   }
 
   //on clicking on submit button
   function onSubmit() {
-    if (letter.indexOf(input) > -1) {
-      let temp = allMatchedText
-
-      setAllMatchedText(
-        Array.from(new Set(temp.concat(input)))
-          .sort()
-          .join(''),
-      )
-      if (
-        Array.from(new Set(letter)).sort().join('') ===
-        Array.from(new Set(temp.concat(input)))
-          .sort()
-          .join('')
-      ) {
-        toast.show({
-          description: 'Great! match',
-        })
-        if (highScore < score + 1) {
-          storeData(score + 1)
-          setHighScore(score + 1)
-        }
-        setScore(score + 1)
-        reInitialize()
+    const [tempLetter, ifAnyMatched] = checkIfAnyMatched(letter, input)
+    let ifAllMatchIndex = checkIfAllMatched(tempLetter)
+    setLetter([...tempLetter])
+    //if all character matched
+    if (ifAllMatchIndex === -1) {
+      toast.show({
+        description: 'Great! match',
+      })
+      setScore(score + 1)
+      // if any character mot matched and lives value is 0 then reset lives to 7 again and if lives value is other than 0 then decrease 1 lives
+    } else if (!ifAnyMatched) {
+      if (lives - 1 === -1) {
         setLives(7)
-      }
-    } else {
-      if (lives - 1 == 0) {
-        setScore(0)
-        setLives(7)
-        reInitialize()
       } else setLives(lives - 1)
     }
     setInput('')
@@ -110,16 +79,13 @@ const GameScreen = () => {
         justifyContent="center"
         marginBottom={10}
       >
-        {letter
-          .toString()
-          .split('')
-          .map((item, index) => {
-            return (
-              <Text key={index} fontSize="2xl">
-                {allMatchedText.includes(item) ? item : '_'}
-              </Text>
-            )
-          })}
+        {letter.map((item, index) => {
+          return (
+            <Text key={index} fontSize="2xl">
+              {item.match ? item.value : '_'}
+            </Text>
+          )
+        })}
       </HStack>
       <Input
         size="xl"
@@ -150,7 +116,7 @@ const GameScreen = () => {
         Live: {lives}
       </Text>
       <Text fontSize="md" marginBottom={10} bold>
-        High score: {highScore}
+        High score: {highScored}
       </Text>
     </ScrollView>
   )

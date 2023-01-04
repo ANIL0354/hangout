@@ -104,7 +104,15 @@ export function getRandom() {
     'monkey',
   ]
   function random_item(items) {
-    return items[Math.floor(Math.random() * items.length)]
+    const randomObj = items[Math.floor(Math.random() * items.length)]
+      .split('')
+      .map((el) => {
+        return {
+          value: el,
+          match: false,
+        }
+      })
+    return randomObj
   }
 
   let word = random_item(words)
